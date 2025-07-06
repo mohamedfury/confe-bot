@@ -1,20 +1,14 @@
-import time
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-API_TOKEN = '7787936953:AAF5_FjYZA-xove1KaqkyPrOpNSGLwGaxA4'
-DEVELOPER_ID = 674291793
-GROUP_ID = -1001201718722
+API_TOKEN = '7787936953:AAG29m4s-rC5tx4ZX0ROBsjEPta9KDCvwMs'
+DEVELOPER_ID = 123456789  # غيّره إلى آي دي المطور الحقيقي
+GROUP_ID = -1001234567890  # غيّره إلى آي دي المجموعة
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
 
 admissions_open = False
-
-# تخزين آخر وقت اعتراف لكل مستخدم لمنع السبام
-user_last_confession = {}
-
-# تخزين نصوص الاعترافات حسب message_id
 confessions_storage = {}
 
 @dp.message_handler(commands=['start'])
@@ -34,57 +28,45 @@ async def group_commands(message: types.Message):
 
 @dp.message_handler(lambda message: message.chat.type == 'private')
 async def handle_confession(message: types.Message):
-    global admissions_open
-
     if not admissions_open:
         await message.reply("🚫 الاعترافات مغلقة حالياً.")
         return
 
     user_id = message.from_user.id
-    now = time.time()
+    message_id = message.message_id
 
-    # تحقق إذا مرّت 60 دقيقة من آخر اعتراف
-    if user_id in user_last_confession:
-        last_time = user_last_confession[user_id]
-        elapsed = now - last_time
-        if elapsed < 3600:
-            remaining = int((3600 - elapsed) // 60)
-            await message.reply(f"⏳ انتظر {remaining} دقيقة قبل أن ترسل اعتراف آخر.")
-            return
-
-    user_last_confession[user_id] = now
-
-    # تأكيد للمرسل
+    # رسالة تأكيد للمرسل
     await message.reply("✅ تم ارسال اعترافك بنجاح.")
 
-    # إرسال رسالة للمطور عن منو دز الاعتراف
+    # إرسال للمطور معلومات المُرسل
     await bot.send_message(DEVELOPER_ID, f"📥 اعتراف جديد من: {message.from_user.full_name} (ID: {user_id})")
 
-    # خزّن نص الاعتراف مع message_id
-    confessions_storage[message.message_id] = message.text
+    # تخزين الاعتراف
+    confessions_storage[message_id] = message.text
 
-    # أزرار نشر وحذف
+    # أزرار نشر/حذف
     keyboard = InlineKeyboardMarkup().add(
-        InlineKeyboardButton("نشر", callback_data=f"publish|{message.message_id}|{user_id}"),
-        InlineKeyboardButton("حذف", callback_data=f"delete|{message.message_id}")
+        InlineKeyboardButton("نشر", callback_data=f"publish|{message_id}"),
+        InlineKeyboardButton("حذف", callback_data=f"delete|{message_id}")
     )
 
-    # إرسال نص الاعتراف مع الأزرار للمطور
+    # إرسال نص الاعتراف للمطور
     await bot.send_message(DEVELOPER_ID, f"📝 نص الاعتراف:\n\n{message.text}", reply_markup=keyboard)
 
 @dp.callback_query_handler()
 async def handle_decision(call: types.CallbackQuery):
-    action, msg_id, user_id = call.data.split("|")
+    action, msg_id = call.data.split("|")
+    msg_id = int(msg_id)
 
     if action == "publish":
-        confession_text = confessions_storage.get(int(msg_id), "لا يوجد نص الاعتراف.")
+        confession_text = confessions_storage.get(msg_id, "❗ لم يتم العثور على نص الاعتراف.")
         await bot.send_message(GROUP_ID, f"💭 اعتراف مجهول:\n\n{confession_text}")
         await call.message.edit_text("✅ تم نشر الاعتراف.")
     elif action == "delete":
         await call.message.edit_text("❌ تم حذف الاعتراف.")
 
-    # بعد النشر أو الحذف، نحذف الاعتراف من التخزين
-    confessions_storage.pop(int(msg_id), None)
+    # حذف الاعتراف من التخزين بعد النشر/الحذف
+    confessions_storage.pop(msg_id, None)
 
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)
