@@ -1,7 +1,7 @@
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-API_TOKEN = '7787936953:AAFPyBi4QPJWQKQB9qM3dBzQwizFYh3XjU0'
+API_TOKEN = '7787936953:AAF5_FjYZA-xove1KaqkyPrOpNSGLwGaxA4'
 DEVELOPER_ID = 674291793
 GROUP_ID = -1001201718722
 
