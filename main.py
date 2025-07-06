@@ -2,14 +2,13 @@ from aiogram import Bot, Dispatcher, executor, types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 API_TOKEN = '7787936953:AAG29m4s-rC5tx4ZX0ROBsjEPta9KDCvwMs'
-DEVELOPER_ID = 674291793  # غيّره إلى آي دي المطور الحقيقي
-GROUP_ID = -1001201718722  # غيّره إلى آي دي المجموعة
+DEVELOPER_ID = 674291793   # غيّر هذا إلى آي دي المطور الحقيقي
+GROUP_ID = -1001201718722  # غيّر هذا إلى آي دي مجموعتك
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
 
 admissions_open = False
-confessions_storage = {}
 
 @dp.message_handler(commands=['start'])
 async def start(message: types.Message):
@@ -32,41 +31,29 @@ async def handle_confession(message: types.Message):
         await message.reply("🚫 الاعترافات مغلقة حالياً.")
         return
 
-    user_id = message.from_user.id
-    message_id = message.message_id
-
-    # رسالة تأكيد للمرسل
+    # رسالة تأكيد للمستخدم
     await message.reply("✅ تم ارسال اعترافك بنجاح.")
 
     # إرسال للمطور معلومات المُرسل
-    await bot.send_message(DEVELOPER_ID, f"📥 اعتراف جديد من: {message.from_user.full_name} (ID: {user_id})")
+    await bot.send_message(DEVELOPER_ID, f"📥 اعتراف جديد من: {message.from_user.full_name} (ID: {message.from_user.id})")
 
-    # تخزين الاعتراف
-    confessions_storage[message_id] = message.text
-
-    # أزرار نشر/حذف
+    # أزرار التحكم
     keyboard = InlineKeyboardMarkup().add(
-        InlineKeyboardButton("نشر", callback_data=f"publish|{message_id}"),
-        InlineKeyboardButton("حذف", callback_data=f"delete|{message_id}")
+        InlineKeyboardButton("نشر", callback_data="publish"),
+        InlineKeyboardButton("حذف", callback_data="delete")
     )
 
-    # إرسال نص الاعتراف للمطور
+    # إرسال نص الاعتراف برسالة قابلة للنشر
     await bot.send_message(DEVELOPER_ID, f"📝 نص الاعتراف:\n\n{message.text}", reply_markup=keyboard)
 
 @dp.callback_query_handler()
 async def handle_decision(call: types.CallbackQuery):
-    action, msg_id = call.data.split("|")
-    msg_id = int(msg_id)
-
-    if action == "publish":
-        confession_text = confessions_storage.get(msg_id, "❗ لم يتم العثور على نص الاعتراف.")
+    if call.data == "publish":
+        confession_text = call.message.text.replace("📝 نص الاعتراف:\n\n", "")
         await bot.send_message(GROUP_ID, f"💭 اعتراف مجهول:\n\n{confession_text}")
         await call.message.edit_text("✅ تم نشر الاعتراف.")
-    elif action == "delete":
+    elif call.data == "delete":
         await call.message.edit_text("❌ تم حذف الاعتراف.")
-
-    # حذف الاعتراف من التخزين بعد النشر/الحذف
-    confessions_storage.pop(msg_id, None)
 
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)
