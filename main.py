@@ -2,7 +2,7 @@ from aiogram import Bot, Dispatcher, executor, types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 API_TOKEN = '7787936953:AAG29m4s-rC5tx4ZX0ROBsjEPta9KDCvwMs'
-DEVELOPER_ID = 123456789  # غيّره إلى آي دي المطور الحقيقي
+DEVELOPER_ID = 674291793  # غيّره إلى آي دي المطور الحقيقي
 GROUP_ID = -1001234567890  # غيّره إلى آي دي المجموعة
 
 bot = Bot(token=API_TOKEN)
